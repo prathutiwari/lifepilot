@@ -321,7 +321,7 @@ function MeetingsTab({ meetings, setMeetings, onSend, isLoading, clarification, 
                         {/* Edit */}
                         <button
                           onClick={() => handleEdit(globalIndex)}
-                          className="opacity-0 group-hover:opacity-100 text-text-muted hover:text-blue-400 transition-all rounded-md"
+                          className="opacity-100 text-text-muted hover:text-blue-400 transition-all rounded-md"
                           style={{ padding: '4px' }}
                           title="Edit"
                         >
@@ -332,7 +332,7 @@ function MeetingsTab({ meetings, setMeetings, onSend, isLoading, clarification, 
                         {/* Delete */}
                         <button
                           onClick={() => handleDelete(globalIndex)}
-                          className="opacity-0 group-hover:opacity-100 text-text-muted hover:text-red-400 transition-all rounded-md"
+                          className="opacity-100 text-text-muted hover:text-red-400 transition-all rounded-md"
                           style={{ padding: '4px' }}
                           title="Delete"
                         >

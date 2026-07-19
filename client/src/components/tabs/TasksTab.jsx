@@ -261,7 +261,7 @@ function TasksTab({ tasks, setTasks, onSend, isLoading, clarification, onAdd, on
                       <div className="flex items-center flex-shrink-0" style={{ gap: '2px' }}>
                         <button
                           onClick={() => setEditingIndex(isEditing ? null : index)}
-                          className={`text-text-muted hover:text-primary-light transition-all ${isEditing ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+                          className="text-text-muted hover:text-primary-light transition-all opacity-100"
                           style={{ padding: '4px' }}
                         >
                           {isEditing ? (
@@ -272,7 +272,7 @@ function TasksTab({ tasks, setTasks, onSend, isLoading, clarification, onAdd, on
                         </button>
                         <button
                           onClick={() => deleteTask(index)}
-                          className="opacity-0 group-hover:opacity-100 text-text-muted hover:text-red-400 transition-all flex-shrink-0"
+                          className="opacity-100 text-text-muted hover:text-red-400 transition-all flex-shrink-0"
                           style={{ padding: '4px' }}
                         >
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -311,7 +311,7 @@ function TasksTab({ tasks, setTasks, onSend, isLoading, clarification, onAdd, on
                       <p className="text-sm text-text-muted line-through flex-1">{task.payload?.title || "Task"}</p>
                       <button
                         onClick={() => deleteTask(index)}
-                        className="opacity-0 group-hover:opacity-100 text-text-muted hover:text-red-400 transition-all flex-shrink-0"
+                        className="opacity-100 text-text-muted hover:text-red-400 transition-all flex-shrink-0"
                         style={{ padding: '4px' }}
                       >
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

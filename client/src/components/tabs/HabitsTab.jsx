@@ -225,7 +225,7 @@ function HabitsTab({ habits, setHabits, onSend, isLoading, clarification, onAdd,
 
                   {/* Delete (only show for today) */}
                   {isToday && (
-                    <button onClick={() => setDeleteIndex(globalIdx)} className="opacity-0 group-hover:opacity-100 text-text-muted hover:text-red-400 transition-all" style={{ padding: '4px' }}>
+                    <button onClick={() => setDeleteIndex(globalIdx)} className="opacity-100 text-text-muted hover:text-red-400 transition-all" style={{ padding: '4px' }}>
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
                   )}

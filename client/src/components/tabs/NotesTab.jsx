@@ -187,7 +187,7 @@ function NotesTab({ notes, setNotes, onSend, isLoading, clarification, onAdd, on
                 <p className="text-xs text-text-muted/50" style={{ marginTop: '6px' }}>{note.effectiveDate}</p>
                 <button
                   onClick={(e) => { e.stopPropagation(); deleteNote(i); }}
-                  className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 text-text-muted hover:text-red-400 transition-all"
+                  className="absolute top-3 right-3 opacity-100 text-text-muted hover:text-red-400 transition-all"
                   style={{ padding: '2px' }}
                 >
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
