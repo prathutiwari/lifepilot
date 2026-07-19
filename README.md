@@ -42,18 +42,6 @@ cd server
 npm install
 ```
 
-Create `.env` with:
-
-```
-PORT=3000
-JWT_SECRET=your_secret
-GROQ_API_KEY=your_groq_key
-TURSO_DATABASE_URL=your_turso_url
-TURSO_AUTH_TOKEN=your_turso_token
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-GOOGLE_REDIRECT_URI=http://localhost:3000/api/v1/auth/google/callback
-```
 
 ```bash
 npm start
