@@ -14,6 +14,7 @@ function HabitsTab({ habits, setHabits, onSend, isLoading, clarification, onAdd,
   const [newHabit, setNewHabit] = useState("");
   const [deleteIndex, setDeleteIndex] = useState(null);
   const [showStats, setShowStats] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const today = getToday();
   const isToday = selectedDate === today;
@@ -69,14 +70,21 @@ function HabitsTab({ habits, setHabits, onSend, isLoading, clarification, onAdd,
   // Add a new habit definition
   const handleAddHabit = async (e) => {
     e.preventDefault();
-    if (!newHabit.trim()) return;
-    await onAdd("habits", {
-      type: "habit",
-      effectiveDate: today,
-      payload: { subtype: "habit_def", name: newHabit.trim() },
-    });
-    setNewHabit("");
-    setShowAddForm(false);
+    if (!newHabit.trim() || isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      await onAdd("habits", {
+        type: "habit",
+        effectiveDate: today,
+        payload: { subtype: "habit_def", name: newHabit.trim() },
+      });
+      setNewHabit("");
+      setShowAddForm(false);
+    } catch (error) {
+      console.error("Failed to add habit", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Toggle habit done/not-done (only for today)
@@ -161,8 +169,8 @@ function HabitsTab({ habits, setHabits, onSend, isLoading, clarification, onAdd,
         <div style={{ padding: '16px 28px', borderBottom: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface-light)' }}>
           <form onSubmit={handleAddHabit} className="flex items-center" style={{ gap: '10px' }}>
             <input type="text" value={newHabit} onChange={(e) => setNewHabit(e.target.value)} placeholder="Habit name (e.g. Read 30min, Meditate)" className="flex-1 bg-surface-lighter border border-border rounded-lg text-sm text-text placeholder-text-muted/50 focus:outline-none focus:border-primary/50" style={{ height: '38px', padding: '0 12px' }} required autoFocus />
-            <button type="submit" className="text-sm text-white bg-primary hover:bg-primary-dark rounded-lg font-medium" style={{ padding: '8px 14px' }}>Add</button>
-            <button type="button" onClick={() => setShowAddForm(false)} className="text-sm text-text-muted hover:text-text" style={{ padding: '8px' }}>
+            <button type="submit" disabled={isSubmitting} className="text-sm text-white bg-primary hover:bg-primary-dark rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed" style={{ padding: '8px 14px' }}>{isSubmitting ? "Adding..." : "Add"}</button>
+            <button type="button" onClick={() => setShowAddForm(false)} disabled={isSubmitting} className="text-sm text-text-muted hover:text-text disabled:opacity-50 disabled:cursor-not-allowed" style={{ padding: '8px' }}>
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </form>

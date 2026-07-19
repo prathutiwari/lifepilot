@@ -11,6 +11,7 @@ function TasksTab({ tasks, setTasks, onSend, isLoading, clarification, onAdd, on
   const [formData, setFormData] = useState({ title: "", dueDate: "", priority: "medium", notes: "" });
   const [deleteIndex, setDeleteIndex] = useState(null);
   const [editingIndex, setEditingIndex] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const resetForm = () => {
     setFormData({ title: "", dueDate: "", priority: "medium", notes: "" });
@@ -19,19 +20,25 @@ function TasksTab({ tasks, setTasks, onSend, isLoading, clarification, onAdd, on
 
   const handleAddTask = async (e) => {
     e.preventDefault();
-    if (!formData.title.trim()) return;
-
-    await onAdd("tasks", {
-      type: "task",
-      effectiveDate: formData.dueDate || getToday(),
-      payload: {
-        title: formData.title,
-        priority: formData.priority,
-        notes: formData.notes,
-      },
-      completed: false,
-    });
-    resetForm();
+    if (!formData.title.trim() || isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      await onAdd("tasks", {
+        type: "task",
+        effectiveDate: formData.dueDate || getToday(),
+        payload: {
+          title: formData.title,
+          priority: formData.priority,
+          notes: formData.notes,
+        },
+        completed: false,
+      });
+      resetForm();
+    } catch (error) {
+      console.error("Failed to add task", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const toggleComplete = (index) => {
@@ -153,11 +160,11 @@ function TasksTab({ tasks, setTasks, onSend, isLoading, clarification, onAdd, on
             </div>
 
             <div className="flex justify-end" style={{ gap: '8px' }}>
-              <button type="button" onClick={resetForm} className="text-sm text-text-muted hover:text-text rounded-lg border border-border" style={{ padding: '7px 14px' }}>
+              <button type="button" onClick={resetForm} disabled={isSubmitting} className="text-sm text-text-muted hover:text-text rounded-lg border border-border disabled:opacity-50 disabled:cursor-not-allowed" style={{ padding: '7px 14px' }}>
                 Cancel
               </button>
-              <button type="submit" className="text-sm text-white bg-primary hover:bg-primary-dark rounded-lg font-medium" style={{ padding: '7px 14px' }}>
-                Add Task
+              <button type="submit" disabled={isSubmitting} className="text-sm text-white bg-primary hover:bg-primary-dark rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed" style={{ padding: '7px 14px' }}>
+                {isSubmitting ? "Adding..." : "Add Task"}
               </button>
             </div>
           </form>

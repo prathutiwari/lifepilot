@@ -31,6 +31,7 @@ function StudyTab({ studies, setStudies, onSend, isLoading, clarification, onAdd
   const [deleteIndex, setDeleteIndex] = useState(null);
   const [editingIndex, setEditingIndex] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [dateOffset, setDateOffset] = useState(0);
   const dateScrollRef = useRef(null);
 
@@ -88,20 +89,27 @@ function StudyTab({ studies, setStudies, onSend, isLoading, clarification, onAdd
 
   // Finish session
   const finishSession = async () => {
-    if (!activeSession) return;
-    await onAdd("study", {
-      type: "study",
-      effectiveDate: today,
-      payload: {
-        title: activeSession.subject,
-        duration: formatDurationLabel(elapsed),
-        durationSeconds: elapsed,
-        targetMinutes: activeSession.targetMinutes,
-      },
-    });
-    setActiveSession(null);
-    setElapsed(0);
-    clearInterval(timerRef.current);
+    if (!activeSession || isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      await onAdd("study", {
+        type: "study",
+        effectiveDate: today,
+        payload: {
+          title: activeSession.subject,
+          duration: formatDurationLabel(elapsed),
+          durationSeconds: elapsed,
+          targetMinutes: activeSession.targetMinutes,
+        },
+      });
+      setActiveSession(null);
+      setElapsed(0);
+      clearInterval(timerRef.current);
+    } catch (error) {
+      console.error("Failed to save study session", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Discard session
@@ -140,7 +148,7 @@ function StudyTab({ studies, setStudies, onSend, isLoading, clarification, onAdd
             </div>
             <div className="flex items-center" style={{ gap: '8px' }}>
               <button onClick={discardSession} className="text-xs text-text-muted hover:text-red-400 border border-border rounded-lg" style={{ padding: '6px 12px' }}>Discard</button>
-              <button onClick={finishSession} className="text-xs text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded-lg" style={{ padding: '6px 12px' }}>Finish Session ✓</button>
+              <button onClick={finishSession} disabled={isSubmitting} className="text-xs text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed" style={{ padding: '6px 12px' }}>{isSubmitting ? "Saving..." : "Finish Session ✓"}</button>
             </div>
           </div>
         </div>

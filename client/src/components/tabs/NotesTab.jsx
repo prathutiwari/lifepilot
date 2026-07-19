@@ -48,6 +48,7 @@ function NotesTab({ notes, setNotes, onSend, isLoading, clarification, onAdd, on
   const [deleteIndex, setDeleteIndex] = useState(null);
   const [openIndex, setOpenIndex] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const editorRef = useRef(null);
   const createEditorRef = useRef(null);
 
@@ -62,14 +63,21 @@ function NotesTab({ notes, setNotes, onSend, isLoading, clarification, onAdd, on
 
   const handleAdd = async (e) => {
     e.preventDefault();
-    if (!formTitle.trim()) return;
-    const content = createEditorRef.current?.innerHTML || "";
-    await onAdd("notes", {
-      type: "note",
-      effectiveDate: new Date().toISOString().split("T")[0],
-      payload: { title: formTitle, content },
-    });
-    resetForm();
+    if (!formTitle.trim() || isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const content = createEditorRef.current?.innerHTML || "";
+      await onAdd("notes", {
+        type: "note",
+        effectiveDate: new Date().toISOString().split("T")[0],
+        payload: { title: formTitle, content },
+      });
+      resetForm();
+    } catch (error) {
+      console.error("Failed to add note", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const deleteNote = (index) => setDeleteIndex(index);
@@ -149,8 +157,8 @@ function NotesTab({ notes, setNotes, onSend, isLoading, clarification, onAdd, on
               </div>
             </div>
             <div className="flex justify-end" style={{ gap: '8px' }}>
-              <button type="button" onClick={resetForm} className="text-sm text-text-muted hover:text-text rounded-lg border border-border" style={{ padding: '7px 14px' }}>Cancel</button>
-              <button type="submit" className="text-sm text-white bg-primary hover:bg-primary-dark rounded-lg font-medium" style={{ padding: '7px 14px' }}>Save Note</button>
+              <button type="button" onClick={resetForm} disabled={isSubmitting} className="text-sm text-text-muted hover:text-text rounded-lg border border-border disabled:opacity-50 disabled:cursor-not-allowed" style={{ padding: '7px 14px' }}>Cancel</button>
+              <button type="submit" disabled={isSubmitting} className="text-sm text-white bg-primary hover:bg-primary-dark rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed" style={{ padding: '7px 14px' }}>{isSubmitting ? "Saving..." : "Save Note"}</button>
             </div>
           </form>
         </div>

@@ -15,6 +15,7 @@ function WorkoutsTab({ workouts, setWorkouts, onSend, isLoading, clarification, 
   const [editingIndex, setEditingIndex] = useState(null); // index of workout being edited
   const [deleteIndex, setDeleteIndex] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [dateOffset, setDateOffset] = useState(0);
   const dateScrollRef = useRef(null);
 
@@ -123,33 +124,41 @@ function WorkoutsTab({ workouts, setWorkouts, onSend, isLoading, clarification, 
 
   // Finish workout
   const finishWorkout = async () => {
-    const duration = Math.round((Date.now() - workoutStartTime) / 60000);
-    const totalVolume = activeWorkout.exercises.reduce((sum, ex) => {
-      return sum + ex.sets.reduce((s, set) => {
-        if (set.weight && set.reps) return s + (Number(set.weight) || 0) * (Number(set.reps) || 0);
-        return s;
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const duration = Math.round((Date.now() - workoutStartTime) / 60000);
+      const totalVolume = activeWorkout.exercises.reduce((sum, ex) => {
+        return sum + ex.sets.reduce((s, set) => {
+          if (set.weight && set.reps) return s + (Number(set.weight) || 0) * (Number(set.reps) || 0);
+          return s;
+        }, 0);
       }, 0);
-    }, 0);
 
-    await onAdd("workouts", {
-      type: "workout",
-      effectiveDate: new Date().toISOString().split("T")[0],
-      payload: {
-        title: activeWorkout.title?.trim() || "Workout Session",
-        description: activeWorkout.description?.trim() || "",
-        duration: `${duration} min`,
-        exercises: activeWorkout.exercises.map((ex) => ({
-          name: ex.name,
-          muscle: ex.muscle,
-          sets: ex.sets.filter((s) => s.weight || s.reps),
-        })).filter((ex) => ex.sets.length > 0),
-        totalVolume,
-      },
-    });
-    setActiveWorkout(null);
-    setWorkoutStartTime(null);
-    setTimerRunning(false);
-    setRestTimer(0);
+      await onAdd("workouts", {
+        type: "workout",
+        effectiveDate: new Date().toISOString().split("T")[0],
+        payload: {
+          title: activeWorkout.title?.trim() || "Workout Session",
+          description: activeWorkout.description?.trim() || "",
+          duration: `${duration} min`,
+          exercises: activeWorkout.exercises.map((ex) => ({
+            name: ex.name,
+            muscle: ex.muscle,
+            sets: ex.sets.filter((s) => s.weight || s.reps),
+          })).filter((ex) => ex.sets.length > 0),
+          totalVolume,
+        },
+      });
+      setActiveWorkout(null);
+      setWorkoutStartTime(null);
+      setTimerRunning(false);
+      setRestTimer(0);
+    } catch (error) {
+      console.error("Failed to save workout", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Cancel workout
@@ -349,7 +358,7 @@ function WorkoutsTab({ workouts, setWorkouts, onSend, isLoading, clarification, 
           </div>
           <div className="flex items-center" style={{ gap: '8px' }}>
             <button onClick={cancelWorkout} className="text-xs text-text-muted hover:text-red-400 border border-border rounded-lg" style={{ padding: '6px 12px' }}>Discard</button>
-            <button onClick={finishWorkout} className="text-xs text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded-lg" style={{ padding: '6px 12px' }}>Finish Workout ✓</button>
+            <button onClick={finishWorkout} disabled={isSubmitting} className="text-xs text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed" style={{ padding: '6px 12px' }}>{isSubmitting ? "Saving..." : "Finish Workout ✓"}</button>
           </div>
         </div>
 

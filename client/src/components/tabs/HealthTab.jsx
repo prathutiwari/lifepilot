@@ -38,6 +38,7 @@ function HealthTab({ health, setHealth, onSend, isLoading, clarification, onAdd,
   const [deleteIndex, setDeleteIndex] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [editValue, setEditValue] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const today = getToday();
   const isToday = selectedDate === today;
@@ -77,41 +78,73 @@ function HealthTab({ health, setHealth, onSend, isLoading, clarification, onAdd,
   // Save targets
   const handleSaveTargets = async (e) => {
     e.preventDefault();
-    const newTargets = {
-      water: Number(setupData.water) || 3,
-      sleep: Number(setupData.sleep) || 8,
-      calories: Number(setupData.calories) || 2000,
-    };
-    if (targetEntry?.id) {
-      const updatedPayload = { subtype: "targets", targets: newTargets };
-      await onUpdate("health", targetEntry.id, { payload: updatedPayload });
-      setHealth((prev) => prev.map((h) => h.id === targetEntry.id ? { ...h, payload: updatedPayload } : h));
-    } else {
-      await onAdd("health", { type: "health", effectiveDate: today, payload: { subtype: "targets", targets: newTargets } });
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const newTargets = {
+        water: Number(setupData.water) || 3,
+        sleep: Number(setupData.sleep) || 8,
+        calories: Number(setupData.calories) || 2000,
+      };
+      if (targetEntry?.id) {
+        const updatedPayload = { subtype: "targets", targets: newTargets };
+        await onUpdate("health", targetEntry.id, { payload: updatedPayload });
+        setHealth((prev) => prev.map((h) => h.id === targetEntry.id ? { ...h, payload: updatedPayload } : h));
+      } else {
+        await onAdd("health", { type: "health", effectiveDate: today, payload: { subtype: "targets", targets: newTargets } });
+      }
+      setShowSetup(false);
+    } catch (error) {
+      console.error("Failed to save targets", error);
+    } finally {
+      setIsSubmitting(false);
     }
-    setShowSetup(false);
   };
 
   // Quick add water
   const addWater = async (ml) => {
-    await onAdd("health", { type: "health", effectiveDate: selectedDate, payload: { subtype: "log", category: "water", value: ml / 1000, label: `${ml}ml` } });
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      await onAdd("health", { type: "health", effectiveDate: selectedDate, payload: { subtype: "log", category: "water", value: ml / 1000, label: `${ml}ml` } });
+    } catch (error) {
+      console.error("Failed to log water", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Add sleep
   const addSleep = async () => {
-    const [bH, bM] = sleepBed.split(":").map(Number);
-    const [wH, wM] = sleepWake.split(":").map(Number);
-    let bed = bH * 60 + bM, wake = wH * 60 + wM;
-    if (wake <= bed) wake += 24 * 60;
-    const hours = Math.round(((wake - bed) / 60) * 10) / 10;
-    await onAdd("health", { type: "health", effectiveDate: selectedDate, payload: { subtype: "log", category: "sleep", value: hours, label: `${sleepBed} → ${sleepWake}` } });
-    setActivePanel(null);
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const [bH, bM] = sleepBed.split(":").map(Number);
+      const [wH, wM] = sleepWake.split(":").map(Number);
+      let bed = bH * 60 + bM, wake = wH * 60 + wM;
+      if (wake <= bed) wake += 24 * 60;
+      const hours = Math.round(((wake - bed) / 60) * 10) / 10;
+      await onAdd("health", { type: "health", effectiveDate: selectedDate, payload: { subtype: "log", category: "sleep", value: hours, label: `${sleepBed} → ${sleepWake}` } });
+      setActivePanel(null);
+    } catch (error) {
+      console.error("Failed to log sleep", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Add calories
   const addCalories = async (amount) => {
-    await onAdd("health", { type: "health", effectiveDate: selectedDate, payload: { subtype: "log", category: "calories", value: amount, label: `${amount} kcal` } });
-    setCalorieInput("");
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      await onAdd("health", { type: "health", effectiveDate: selectedDate, payload: { subtype: "log", category: "calories", value: amount, label: `${amount} kcal` } });
+      setCalorieInput("");
+    } catch (error) {
+      console.error("Failed to log calories", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Edit a log entry
@@ -210,7 +243,7 @@ function HealthTab({ health, setHealth, onSend, isLoading, clarification, onAdd,
                   <input type="number" step="100" min="500" value={setupData.calories} onChange={(e) => setSetupData({ ...setupData, calories: e.target.value })} className="w-full bg-surface-lighter border border-border rounded-lg text-sm text-text focus:outline-none focus:border-primary/50" style={{ height: '38px', padding: '0 12px' }} required />
                 </div>
               </div>
-              <button type="submit" className="w-full text-sm text-white bg-primary hover:bg-primary-dark rounded-lg font-medium" style={{ padding: '10px' }}>Save Targets</button>
+              <button type="submit" disabled={isSubmitting} className="w-full text-sm text-white bg-primary hover:bg-primary-dark rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed" style={{ padding: '10px' }}>{isSubmitting ? "Saving..." : "Save Targets"}</button>
             </form>
           </div>
         </div>
@@ -249,7 +282,7 @@ function HealthTab({ health, setHealth, onSend, isLoading, clarification, onAdd,
             <p className="text-xs text-text-muted font-medium" style={{ marginBottom: '10px' }}>💧 Add Water</p>
             <div className="flex flex-wrap" style={{ gap: '8px' }}>
               {[150, 250, 500, 750, 1000].map((ml) => (
-                <button key={ml} onClick={() => addWater(ml)} className="text-sm font-medium text-sky-300 bg-sky-500/10 border border-sky-500/20 rounded-lg hover:bg-sky-500/20 transition-colors" style={{ padding: '8px 14px' }}>
+                <button key={ml} onClick={() => addWater(ml)} disabled={isSubmitting} className="text-sm font-medium text-sky-300 bg-sky-500/10 border border-sky-500/20 rounded-lg hover:bg-sky-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" style={{ padding: '8px 14px' }}>
                   +{ml >= 1000 ? `${ml / 1000}L` : `${ml}ml`}
                 </button>
               ))}
@@ -272,7 +305,7 @@ function HealthTab({ health, setHealth, onSend, isLoading, clarification, onAdd,
                 <input type="time" value={sleepWake} onChange={(e) => setSleepWake(e.target.value)} className="w-full bg-surface-lighter border border-border rounded-lg text-sm text-text focus:outline-none focus:border-primary/50" style={{ height: '38px', padding: '0 10px' }} />
               </div>
               <div style={{ paddingTop: '16px' }}>
-                <button onClick={addSleep} className="text-sm text-white bg-violet-600 hover:bg-violet-700 rounded-lg font-medium" style={{ padding: '9px 14px' }}>Log</button>
+                <button onClick={addSleep} disabled={isSubmitting} className="text-sm text-white bg-violet-600 hover:bg-violet-700 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed" style={{ padding: '9px 14px' }}>{isSubmitting ? "Logging..." : "Log"}</button>
               </div>
             </div>
             <p className="text-xs text-text-muted">
@@ -287,14 +320,14 @@ function HealthTab({ health, setHealth, onSend, isLoading, clarification, onAdd,
             <p className="text-xs text-text-muted font-medium" style={{ marginBottom: '10px' }}>🍎 Add Calories</p>
             <div className="flex flex-wrap" style={{ gap: '8px', marginBottom: '10px' }}>
               {[200, 300, 500, 700, 1000].map((cal) => (
-                <button key={cal} onClick={() => addCalories(cal)} className="text-sm font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-lg hover:bg-emerald-500/20 transition-colors" style={{ padding: '8px 14px' }}>
+                <button key={cal} onClick={() => addCalories(cal)} disabled={isSubmitting} className="text-sm font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-lg hover:bg-emerald-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" style={{ padding: '8px 14px' }}>
                   +{cal} kcal
                 </button>
               ))}
             </div>
             <div className="flex" style={{ gap: '8px' }}>
               <input type="number" value={calorieInput} onChange={(e) => setCalorieInput(e.target.value)} placeholder="Custom kcal" className="flex-1 bg-surface-lighter border border-border rounded-lg text-sm text-text placeholder-text-muted/50 focus:outline-none focus:border-primary/50" style={{ height: '36px', padding: '0 12px' }} />
-              <button onClick={() => { if (calorieInput) addCalories(Number(calorieInput)); }} className="text-sm text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg font-medium" style={{ padding: '8px 14px' }}>Add</button>
+              <button onClick={() => { if (calorieInput) addCalories(Number(calorieInput)); }} disabled={isSubmitting} className="text-sm text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed" style={{ padding: '8px 14px' }}>{isSubmitting ? "Adding..." : "Add"}</button>
             </div>
           </div>
         )}

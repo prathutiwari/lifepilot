@@ -23,6 +23,7 @@ function ExpensesTab({ expenses, setExpenses, onSend, isLoading, clarification, 
   const [dateOffset, setDateOffset] = useState(0);
   const dateScrollRef = useRef(null);
   const [formData, setFormData] = useState({ amount: "", category: "food", date: new Date().toISOString().split("T")[0] });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -71,14 +72,21 @@ function ExpensesTab({ expenses, setExpenses, onSend, isLoading, clarification, 
 
   const handleAdd = async (e) => {
     e.preventDefault();
-    if (!formData.amount) return;
-    const cat = getCategoryInfo(formData.category);
-    await onAdd("expenses", {
-      type: "expense",
-      effectiveDate: formData.date,
-      payload: { title: cat.label, amount: Number(formData.amount), category: formData.category },
-    });
-    resetForm();
+    if (!formData.amount || isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const cat = getCategoryInfo(formData.category);
+      await onAdd("expenses", {
+        type: "expense",
+        effectiveDate: formData.date,
+        payload: { title: cat.label, amount: Number(formData.amount), category: formData.category },
+      });
+      resetForm();
+    } catch (error) {
+      console.error("Failed to add expense", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const deleteExpense = (index) => setDeleteIndex(index);
@@ -161,8 +169,8 @@ function ExpensesTab({ expenses, setExpenses, onSend, isLoading, clarification, 
               </div>
             </div>
             <div className="flex justify-end" style={{ gap: '8px' }}>
-              <button type="button" onClick={resetForm} className="text-sm text-text-muted hover:text-text rounded-lg border border-border" style={{ padding: '7px 14px' }}>Cancel</button>
-              <button type="submit" className="text-sm text-white bg-primary hover:bg-primary-dark rounded-lg font-medium" style={{ padding: '7px 14px' }}>Add Expense</button>
+              <button type="button" onClick={resetForm} disabled={isSubmitting} className="text-sm text-text-muted hover:text-text rounded-lg border border-border disabled:opacity-50 disabled:cursor-not-allowed" style={{ padding: '7px 14px' }}>Cancel</button>
+              <button type="submit" disabled={isSubmitting} className="text-sm text-white bg-primary hover:bg-primary-dark rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed" style={{ padding: '7px 14px' }}>{isSubmitting ? "Adding..." : "Add Expense"}</button>
             </div>
           </form>
         </div>
