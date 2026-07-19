@@ -53,9 +53,17 @@ function ExpensesTab({ expenses, setExpenses, onSend, isLoading, clarification, 
 
   const total = expenses.reduce((sum, e) => sum + (e.payload?.amount || 0), 0);
 
+  const sanitizeNonNegativeValue = (value) => {
+    if (value === "" || value === null || value === undefined) return "";
+    const numericValue = Number(value);
+    if (Number.isNaN(numericValue)) return "";
+    return Math.max(0, numericValue);
+  };
+
   const updateExpenseField = (index, field, value) => {
     const item = expenses[index];
-    const newPayload = { ...item.payload, [field]: value };
+    const sanitizedValue = field === "amount" ? sanitizeNonNegativeValue(value) : value;
+    const newPayload = { ...item.payload, [field]: sanitizedValue };
     if (field === "category") newPayload.title = getCategoryInfo(value).label;
     setExpenses((prev) => prev.map((e, i) => (i === index ? { ...e, payload: newPayload } : e)));
     if (item?.id) onUpdate("expenses", item.id, { payload: newPayload });
@@ -72,14 +80,15 @@ function ExpensesTab({ expenses, setExpenses, onSend, isLoading, clarification, 
 
   const handleAdd = async (e) => {
     e.preventDefault();
-    if (!formData.amount || isSubmitting) return;
+    if (formData.amount === "" || isSubmitting) return;
     setIsSubmitting(true);
     try {
+      const amount = sanitizeNonNegativeValue(formData.amount);
       const cat = getCategoryInfo(formData.category);
       await onAdd("expenses", {
         type: "expense",
         effectiveDate: formData.date,
-        payload: { title: cat.label, amount: Number(formData.amount), category: formData.category },
+        payload: { title: cat.label, amount: Number(amount), category: formData.category },
       });
       resetForm();
     } catch (error) {
@@ -161,7 +170,7 @@ function ExpensesTab({ expenses, setExpenses, onSend, isLoading, clarification, 
               </div>
               <div>
                 <label className="text-xs text-text-muted font-medium" style={{ display: 'block', marginBottom: '4px' }}>Amount ₹ <span className="text-red-400">*</span></label>
-                <input type="number" value={formData.amount} onChange={(e) => setFormData({ ...formData, amount: e.target.value })} placeholder="500" className="w-full bg-surface-lighter border border-border rounded-lg text-sm text-text placeholder-text-muted/50 focus:outline-none focus:border-primary/50" style={{ height: '38px', padding: '0 12px' }} required autoFocus />
+                <input type="number" min="0" value={formData.amount} onChange={(e) => setFormData({ ...formData, amount: sanitizeNonNegativeValue(e.target.value) })} placeholder="500" className="w-full bg-surface-lighter border border-border rounded-lg text-sm text-text placeholder-text-muted/50 focus:outline-none focus:border-primary/50" style={{ height: '38px', padding: '0 12px' }} required autoFocus />
               </div>
               <div>
                 <label className="text-xs text-text-muted font-medium" style={{ display: 'block', marginBottom: '4px' }}>Date</label>
@@ -210,8 +219,9 @@ function ExpensesTab({ expenses, setExpenses, onSend, isLoading, clarification, 
                           <span className="text-sm text-text-muted">₹</span>
                           <input
                             type="number"
+                            min="0"
                             value={exp.payload?.amount || ""}
-                            onChange={(e) => updateExpenseField(i, "amount", Number(e.target.value))}
+                            onChange={(e) => updateExpenseField(i, "amount", e.target.value)}
                             className="bg-transparent text-sm font-bold text-amber-400 border-b border-amber-500/30 focus:outline-none focus:border-primary"
                             style={{ width: '70px', padding: '1px 0' }}
                           />

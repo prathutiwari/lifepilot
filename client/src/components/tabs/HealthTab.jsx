@@ -75,6 +75,13 @@ function HealthTab({ health, setHealth, onSend, isLoading, clarification, onAdd,
   const waterMl = Math.round(dayWater * 1000);
   const targetMl = targets.water * 1000;
 
+  const sanitizeNonNegativeValue = (value) => {
+    if (value === "" || value === null || value === undefined) return "";
+    const numericValue = Number(value);
+    if (Number.isNaN(numericValue)) return "";
+    return Math.max(0, numericValue);
+  };
+
   // Save targets
   const handleSaveTargets = async (e) => {
     e.preventDefault();
@@ -82,9 +89,9 @@ function HealthTab({ health, setHealth, onSend, isLoading, clarification, onAdd,
     setIsSubmitting(true);
     try {
       const newTargets = {
-        water: Number(setupData.water) || 3,
-        sleep: Number(setupData.sleep) || 8,
-        calories: Number(setupData.calories) || 2000,
+        water: Number(sanitizeNonNegativeValue(setupData.water)) || 0,
+        sleep: Number(sanitizeNonNegativeValue(setupData.sleep)) || 0,
+        calories: Number(sanitizeNonNegativeValue(setupData.calories)) || 0,
       };
       if (targetEntry?.id) {
         const updatedPayload = { subtype: "targets", targets: newTargets };
@@ -154,8 +161,8 @@ function HealthTab({ health, setHealth, onSend, isLoading, clarification, onAdd,
   };
 
   const saveEdit = async (log) => {
-    const newValue = Number(editValue);
-    if (!newValue || newValue === log.payload?.value) { setEditingId(null); return; }
+    const newValue = Number(sanitizeNonNegativeValue(editValue));
+    if (Number.isNaN(newValue) || newValue < 0 || newValue === log.payload?.value) { setEditingId(null); return; }
     const cat = log.payload?.category;
     let label = `${newValue}`;
     if (cat === "water") label = `${Math.round(newValue * 1000)}ml`;
@@ -232,15 +239,15 @@ function HealthTab({ health, setHealth, onSend, isLoading, clarification, onAdd,
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '16px' }}>
                 <div>
                   <label className="text-xs text-text-muted font-medium" style={{ display: 'block', marginBottom: '4px' }}>💧 Water (liters/day)</label>
-                  <input type="number" step="0.5" min="0.5" value={setupData.water} onChange={(e) => setSetupData({ ...setupData, water: e.target.value })} className="w-full bg-surface-lighter border border-border rounded-lg text-sm text-text focus:outline-none focus:border-primary/50" style={{ height: '38px', padding: '0 12px' }} required />
+                  <input type="number" step="0.5" min="0" value={setupData.water} onChange={(e) => setSetupData({ ...setupData, water: sanitizeNonNegativeValue(e.target.value) })} className="w-full bg-surface-lighter border border-border rounded-lg text-sm text-text focus:outline-none focus:border-primary/50" style={{ height: '38px', padding: '0 12px' }} required />
                 </div>
                 <div>
                   <label className="text-xs text-text-muted font-medium" style={{ display: 'block', marginBottom: '4px' }}>😴 Sleep (hours/day)</label>
-                  <input type="number" step="0.5" min="1" value={setupData.sleep} onChange={(e) => setSetupData({ ...setupData, sleep: e.target.value })} className="w-full bg-surface-lighter border border-border rounded-lg text-sm text-text focus:outline-none focus:border-primary/50" style={{ height: '38px', padding: '0 12px' }} required />
+                  <input type="number" step="0.5" min="0" value={setupData.sleep} onChange={(e) => setSetupData({ ...setupData, sleep: sanitizeNonNegativeValue(e.target.value) })} className="w-full bg-surface-lighter border border-border rounded-lg text-sm text-text focus:outline-none focus:border-primary/50" style={{ height: '38px', padding: '0 12px' }} required />
                 </div>
                 <div>
                   <label className="text-xs text-text-muted font-medium" style={{ display: 'block', marginBottom: '4px' }}>🍎 Calories (kcal/day)</label>
-                  <input type="number" step="100" min="500" value={setupData.calories} onChange={(e) => setSetupData({ ...setupData, calories: e.target.value })} className="w-full bg-surface-lighter border border-border rounded-lg text-sm text-text focus:outline-none focus:border-primary/50" style={{ height: '38px', padding: '0 12px' }} required />
+                  <input type="number" step="100" min="0" value={setupData.calories} onChange={(e) => setSetupData({ ...setupData, calories: sanitizeNonNegativeValue(e.target.value) })} className="w-full bg-surface-lighter border border-border rounded-lg text-sm text-text focus:outline-none focus:border-primary/50" style={{ height: '38px', padding: '0 12px' }} required />
                 </div>
               </div>
               <button type="submit" disabled={isSubmitting} className="w-full text-sm text-white bg-primary hover:bg-primary-dark rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed" style={{ padding: '10px' }}>{isSubmitting ? "Saving..." : "Save Targets"}</button>
@@ -326,7 +333,7 @@ function HealthTab({ health, setHealth, onSend, isLoading, clarification, onAdd,
               ))}
             </div>
             <div className="flex" style={{ gap: '8px' }}>
-              <input type="number" value={calorieInput} onChange={(e) => setCalorieInput(e.target.value)} placeholder="Custom kcal" className="flex-1 bg-surface-lighter border border-border rounded-lg text-sm text-text placeholder-text-muted/50 focus:outline-none focus:border-primary/50" style={{ height: '36px', padding: '0 12px' }} />
+              <input type="number" min="0" value={calorieInput} onChange={(e) => setCalorieInput(sanitizeNonNegativeValue(e.target.value))} placeholder="Custom kcal" className="flex-1 bg-surface-lighter border border-border rounded-lg text-sm text-text placeholder-text-muted/50 focus:outline-none focus:border-primary/50" style={{ height: '36px', padding: '0 12px' }} />
               <button onClick={() => { if (calorieInput) addCalories(Number(calorieInput)); }} disabled={isSubmitting} className="text-sm text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed" style={{ padding: '8px 14px' }}>{isSubmitting ? "Adding..." : "Add"}</button>
             </div>
           </div>
@@ -352,9 +359,10 @@ function HealthTab({ health, setHealth, onSend, isLoading, clarification, onAdd,
                         <form onSubmit={(e) => { e.preventDefault(); saveEdit(log); }} className="flex items-center" style={{ gap: '6px' }}>
                           <input
                             type="number"
+                            min="0"
                             step={cat === "calories" ? "50" : "0.1"}
                             value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
+                            onChange={(e) => setEditValue(sanitizeNonNegativeValue(e.target.value))}
                             className="bg-surface-lighter border border-border rounded text-sm text-text focus:outline-none focus:border-primary/50"
                             style={{ width: '70px', height: '28px', padding: '0 8px' }}
                             autoFocus

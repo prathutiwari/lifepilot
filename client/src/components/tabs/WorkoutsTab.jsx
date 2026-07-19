@@ -52,6 +52,13 @@ function WorkoutsTab({ workouts, setWorkouts, onSend, isLoading, clarification, 
 
   const formatTimer = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
+  const sanitizeNonNegativeValue = (value) => {
+    if (value === "" || value === null || value === undefined) return "";
+    const numericValue = Number(value);
+    if (Number.isNaN(numericValue)) return "";
+    return Math.max(0, numericValue);
+  };
+
   // Start workout
   const startWorkout = () => {
     setActiveWorkout({ title: "", description: null, exercises: [] });
@@ -86,10 +93,11 @@ function WorkoutsTab({ workouts, setWorkouts, onSend, isLoading, clarification, 
 
   // Update set data
   const updateSet = (exIndex, setIndex, field, value) => {
+    const sanitizedValue = sanitizeNonNegativeValue(value);
     setActiveWorkout((prev) => {
       const exercises = prev.exercises.map((ex, i) => {
         if (i !== exIndex) return ex;
-        const sets = ex.sets.map((s, si) => (si === setIndex ? { ...s, [field]: value } : s));
+        const sets = ex.sets.map((s, si) => (si === setIndex ? { ...s, [field]: sanitizedValue } : s));
         return { ...ex, sets };
       });
       return { ...prev, exercises };
@@ -441,6 +449,7 @@ function WorkoutsTab({ workouts, setWorkouts, onSend, isLoading, clarification, 
                       <span className="text-xs text-text-muted/50">—</span>
                       <input
                         type="number"
+                        min="0"
                         value={set.weight}
                         onChange={(e) => updateSet(exIndex, setIndex, "weight", e.target.value)}
                         placeholder="0"
@@ -449,6 +458,7 @@ function WorkoutsTab({ workouts, setWorkouts, onSend, isLoading, clarification, 
                       />
                       <input
                         type="number"
+                        min="0"
                         value={set.reps}
                         onChange={(e) => updateSet(exIndex, setIndex, "reps", e.target.value)}
                         placeholder="0"

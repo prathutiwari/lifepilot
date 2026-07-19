@@ -66,6 +66,13 @@ function StudyTab({ studies, setStudies, onSend, isLoading, clarification, onAdd
   const dayMinutes = dayStudies.reduce((sum, s) => sum + (s.payload?.durationSeconds ? Math.round(s.payload.durationSeconds / 60) : 0), 0);
   const totalMinutes = studies.reduce((sum, s) => sum + (s.payload?.durationSeconds ? Math.round(s.payload.durationSeconds / 60) : 0), 0);
 
+  const sanitizeNonNegativeValue = (value) => {
+    if (value === "" || value === null || value === undefined) return "";
+    const numericValue = Number(value);
+    if (Number.isNaN(numericValue)) return "";
+    return Math.max(0, numericValue);
+  };
+
   const updateStudyField = (index, field, value) => {
     const item = studies[index];
     const newPayload = { ...item.payload, [field]: value };
@@ -77,9 +84,11 @@ function StudyTab({ studies, setStudies, onSend, isLoading, clarification, onAdd
   const startSession = (e) => {
     e.preventDefault();
     if (!startFormData.subject.trim()) return;
+    const targetMinutesValue = sanitizeNonNegativeValue(startFormData.targetMinutes);
+    const targetMinutes = targetMinutesValue === "" ? null : Number(targetMinutesValue);
     setActiveSession({
       subject: startFormData.subject,
-      targetMinutes: startFormData.targetMinutes ? Number(startFormData.targetMinutes) : null,
+      targetMinutes,
     });
     setElapsed(0);
     setIsPaused(false);
@@ -269,7 +278,7 @@ function StudyTab({ studies, setStudies, onSend, isLoading, clarification, onAdd
               </div>
               <div>
                 <label className="text-xs text-text-muted font-medium" style={{ display: 'block', marginBottom: '4px' }}>Target (min) <span className="text-text-muted/50">optional</span></label>
-                <input type="number" value={startFormData.targetMinutes} onChange={(e) => setStartFormData({ ...startFormData, targetMinutes: e.target.value })} placeholder="45" className="w-full bg-surface-lighter border border-border rounded-lg text-sm text-text placeholder-text-muted/50 focus:outline-none focus:border-primary/50" style={{ height: '38px', padding: '0 12px' }} />
+                <input type="number" min="0" value={startFormData.targetMinutes} onChange={(e) => setStartFormData({ ...startFormData, targetMinutes: sanitizeNonNegativeValue(e.target.value) })} placeholder="45" className="w-full bg-surface-lighter border border-border rounded-lg text-sm text-text placeholder-text-muted/50 focus:outline-none focus:border-primary/50" style={{ height: '38px', padding: '0 12px' }} />
               </div>
             </div>
             <div className="flex justify-end" style={{ gap: '8px' }}>
